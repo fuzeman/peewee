@@ -33,7 +33,6 @@ best_docs = Document.match('some phrase')
 """
 import inspect
 import math
-import sqlite3
 import struct
 
 from peewee import *
@@ -42,8 +41,24 @@ from peewee import OP
 from peewee import QueryCompiler
 from peewee import transaction
 
+try:
+    import sqlite3
+except ImportError:
+    try:
+        from pysqlite2 import dbapi2 as sqlite3
+    except ImportError:
+        sqlite3 = None
 
-FTS_VER = sqlite3.sqlite_version_info[:3] >= (3, 7, 4) and 'FTS4' or 'FTS3'
+try:
+    import apsw
+except ImportError:
+    apsw = None
+
+
+if sqlite3:
+    FTS_VER = 'FTS4' if sqlite3.sqlite_version_info[:3] >= (3, 7, 4) else 'FTS3'
+elif apsw:
+    FTS_VER = 'FTS4' if apsw.SQLITE_VERSION_NUMBER >= 3007004 else 'FTS3'
 
 
 class PrimaryKeyAutoIncrementField(PrimaryKeyField):
